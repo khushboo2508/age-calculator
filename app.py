@@ -1,44 +1,92 @@
 import streamlit as st
 from datetime import date
 from dateutil.relativedelta import relativedelta
+import calendar
 
 
 st.title("🎂 Age Calculator")
 st.write("Calculate your exact age and find out when your next birthday is.")
 
 
-dob = st.date_input(
-    "Enter your Date of Birth",
-    min_value=date(1900, 1, 1),
-    max_value=date.today()
-)
+# Date of Birth
+today = date.today()
+
+st.subheader("Enter your Date of Birth")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    day = st.selectbox(
+        "Day",
+        range(1, 32),
+        index=0
+    )
+
+with col2:
+    month = st.selectbox(
+        "Month",
+        range(1, 13),
+        format_func=lambda x: calendar.month_name[x]
+    )
+
+with col3:
+    year = st.selectbox(
+        "Year",
+        range(1900, today.year + 1),
+        index=today.year - 1900
+    )
 
 
-if st.button("Calculate Age"):
-    today = date.today()
+# Handle invalid dates such as 31 February
+max_day = calendar.monthrange(year, month)[1]
 
-    age = relativedelta(today, dob)
+if day > max_day:
+    st.warning(
+        f"{calendar.month_name[month]} {year} has only {max_day} days. "
+        f"Please select a valid day."
+    )
+else:
+    dob = date(year, month, day)
 
-    next_birthday = dob.replace(year=today.year)
+    if dob > today:
+        st.error("Date of Birth cannot be in the future.")
 
-    if next_birthday <= today:
-        next_birthday = dob.replace(year=today.year + 1)
+    else:
+        if st.button("Calculate Age"):
 
-    days_remaining = (next_birthday - today).days
+            age = relativedelta(today, dob)
 
-    st.subheader("Your Result")
+            # Next birthday
+            try:
+                next_birthday = dob.replace(year=today.year)
+            except ValueError:
+                # For February 29
+                next_birthday = date(today.year, 2, 28)
 
-    col1, col2, col3 = st.columns(3)
+            if next_birthday <= today:
+                try:
+                    next_birthday = dob.replace(year=today.year + 1)
+                except ValueError:
+                    next_birthday = date(today.year + 1, 2, 28)
 
-    with col1:
-        st.metric("Years", age.years)
+            days_remaining = (next_birthday - today).days
 
-    with col2:
-        st.metric("Months", age.months)
+            st.subheader("Your Result")
 
-    with col3:
-        st.metric("Days", age.days)
+            col1, col2, col3 = st.columns(3)
 
-    st.write("📅 **Day of Birth:**", dob.strftime("%A"))
-    st.write("🎉 **Next Birthday:**", next_birthday.strftime("%d-%m-%Y"))
-    st.write("⏳ **Days Remaining:**", days_remaining)
+            with col1:
+                st.metric("Years", age.years)
+
+            with col2:
+                st.metric("Months", age.months)
+
+            with col3:
+                st.metric("Days", age.days)
+
+            st.write("📅 **Day of Birth:**", dob.strftime("%A"))
+            st.write(
+                "🎉 **Next Birthday:**",
+                next_birthday.strftime("%d-%m-%Y")
+            )
+            st.write("⏳ **Days Remaining:**", days_remaining)
