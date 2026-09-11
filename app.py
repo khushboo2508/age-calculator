@@ -90,3 +90,4 @@ else:
                 next_birthday.strftime("%d-%m-%Y")
             )
             st.write("⏳ **Days Remaining:**", days_remaining)
+            st.write("📅 **Next Birthday Day:**", next_birthday.strftime("%A"))
