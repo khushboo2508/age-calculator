@@ -4,7 +4,7 @@ from dateutil.relativedelta import relativedelta
 import calendar
 
 import swisseph as swe
-from geopy.geocoders import Nominatim
+from geopy.geocoders import ArcGIS
 from timezonefinder import TimezoneFinder
 from zoneinfo import ZoneInfo
 
@@ -155,15 +155,21 @@ def get_nakshatra(longitude):
     return name, pada, lord
 
 
+# =========================================================
+# GLOBAL LOCATION + TIMEZONE
+# =========================================================
+
+@st.cache_data(ttl=86400)
 def geocode_location(location_text):
 
-    geolocator = Nominatim(
-        user_agent="age_calculator_app"
+    geolocator = ArcGIS(
+        timeout=15,
+        user_agent="age_calculator_birth_chart"
     )
 
     location = geolocator.geocode(
         location_text,
-        timeout=10
+        exactly_one=True
     )
 
     if location is None:
@@ -180,7 +186,7 @@ def geocode_location(location_text):
     )
 
     if timezone_name is None:
-        timezone_name = "UTC"
+        return None
 
     return latitude, longitude, timezone_name
 
@@ -782,7 +788,7 @@ with st.expander(
 
         birth_location = st.text_input(
             "📍 Birth Location",
-            placeholder="Example: Delhi, India"
+            placeholder="Example: Delhi, India / New York, USA"
         )
 
     st.caption(
@@ -817,7 +823,7 @@ with st.expander(
         else:
 
             with st.spinner(
-                "Calculating your birth chart..."
+                "Finding birth location and calculating your birth chart..."
             ):
 
                 try:
@@ -834,7 +840,8 @@ with st.expander(
 
                         st.error(
                             "Birth location could not be found. "
-                            "Please enter a valid city/place."
+                            "Please enter a more specific location, "
+                            "for example: Mumbai, India or London, UK."
                         )
 
                         st.stop()
@@ -918,6 +925,16 @@ with st.expander(
                         f"{birth_location.title()}"
                     )
 
+                    st.write(
+                        f"🌍 **Coordinates:** "
+                        f"{latitude:.6f}, {longitude:.6f}"
+                    )
+
+                    st.write(
+                        f"🕰️ **Timezone:** "
+                        f"{timezone_name}"
+                    )
+
                     # =====================================
                     # LAGNA
                     # =====================================
@@ -965,7 +982,7 @@ with st.expander(
                     with col1:
 
                         st.write(
-                            f"☀️ **Sun / Surya**"
+                            "☀️ **Sun / Surya**"
                         )
 
                         st.write(
@@ -986,7 +1003,7 @@ with st.expander(
                     with col2:
 
                         st.write(
-                            f"🌙 **Moon / Chandra**"
+                            "🌙 **Moon / Chandra**"
                         )
 
                         st.write(
@@ -1211,12 +1228,16 @@ with st.expander(
                     )
 
                 except Exception as error:
-                    st.error("Unable to generate the birth chart.")
 
                     st.error(
-                        f"Actual Error: {type(error).__name__}: {error}"
+                        "Unable to generate the birth chart."
+                    )
+
+                    st.error(
+                        f"Actual Error: "
+                        f"{type(error).__name__}: {error}"
                     )
 
                     with st.expander("🔍 Error Details"):
+
                         st.exception(error)
-                    
