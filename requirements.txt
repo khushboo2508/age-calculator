@@ -1,2 +1,5 @@
-python-dateutil
 streamlit
+python-dateutil
+pyswisseph
+geopy
+timezonefinder
